@@ -25,14 +25,37 @@ uses
   FileSystem,  {Include the file system core and interfaces}
   FATFS,       {Include the FAT file system driver}
   MMC,         {Include the MMC/SD core to access our SD card}
+  FPimage,
+  FPReadPNG,
+  FPReadJPEG,
+  FPReadBMP,
+  FPReadTIFF,
+  FPReadGIF,
+  FPReadTGA,
+  FPReadPCX,
+  FPReadPSD,
+  uCanvas,
+  freetypeh,
 
   fplil,
+
+
   Ultibo
   { Add additional units here };
+
+const
+  BACK_COLOUR                    = $FF055A93;
+
 
 var
   Running: Boolean = True;
   Console1 : TWindowHandle;
+  Console2 : TWindowHandle;
+  BGnd : TCanvas;
+  aCanvas : TCanvas;
+  anImage : TFPCustomImage;
+  DefFrameBuff : PFrameBufferDevice;
+  Properties : TWindowProperties;
 
 function FncWriteChar(LIL: TLIL; Args: TLILFunctionProcArgs): TLILValue;
 begin
@@ -102,15 +125,37 @@ end;
 
 begin
 
-  Console1 := ConsoleWindowCreate (ConsoleDeviceGetDefault, CONSOLE_POSITION_FULL, true);
+  Console1 := ConsoleWindowCreate (ConsoleDeviceGetDefault, CONSOLE_POSITION_LEFT, true);
+  Console2 := GraphicsWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_RIGHT);
+
+
+  GraphicsWindowSetBackcolor (Console2, BACK_COLOUR);
+  GraphicsWindowClear (Console2);
+
+  DefFrameBuff := FramebufferDeviceGetDefault;
+  aCanvas := TCanvas.Create;
+  if GraphicsWindowGetProperties (Console2, @Properties) = ERROR_SUCCESS then
+    begin
+      aCanvas.Left := Properties.X1;
+      aCanvas.Top := Properties.Y1;
+      aCanvas.SetSize (Properties.X2 - Properties.X1, Properties.Y2 - Properties.Y1 , COLOR_FORMAT_ARGB32);
+    end;
+  aCanvas.Fill (BACK_COLOUR);
+  aCanvas.Flush (DefFrameBuff);   // renamed draw to flush
+
 
 
   if ParamCount=0 then begin
     ConsoleWindowWriteLn(Console1,'FreePascal implementation of LIL');
     ConsoleWindowWriteLn(Console1,'Type "exit" to exit');
-    ConsoleWindowWriteLn(Console1,'');
+    ConsoleWindowWriteLn(Console1,' ');
     REPL;
+    //ConsoleWindowWriteLn(Console1,'Exited LIL');
   end else NonInteractive;
+
+
+  ThreadHalt (0);
+
 end.
 
 
